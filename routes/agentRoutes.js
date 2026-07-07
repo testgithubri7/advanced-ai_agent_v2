@@ -13,12 +13,11 @@ router.post(
 
         try {
 
-            const {
-                message
-            } = req.body;
+            const { message } =
+                req.body;
 
             const reply =
-                await agentService(
+                await agentService.chat(
                     message
                 );
 

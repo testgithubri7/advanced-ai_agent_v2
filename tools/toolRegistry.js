@@ -1,3 +1,6 @@
+const documentSearchTool =
+    require("./documentSearchTool");
+
 const tools = {
 
     weather:
@@ -18,9 +21,9 @@ const tools = {
 
     documentSearch:
 
-        async () => {
+        async (query) => {
 
-            return "Document Search Executed";
+            return await documentSearchTool(query);
 
         }
 

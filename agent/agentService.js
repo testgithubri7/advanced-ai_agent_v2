@@ -4,65 +4,92 @@ const planner =
 const executionEngine =
     require("./executionEngine");
 
-const promptBuilder =
+const buildPrompt =
     require("./promptBuilder");
 
-async function agentService(
-    message
-) {
+const { GoogleGenAI } =
+    require("@google/genai");
 
-    console.log(
-        "\n========== AGENT START =========="
-    );
+const ai =
+    new GoogleGenAI({
 
-    console.log(
-        "User:",
-        message
-    );
+        apiKey:
+            process.env.GEMINI_API_KEY
 
-    // Step 1
+    });
+
+async function chat(userMessage) {
+
+    // STEP 1
     const plan =
         await planner(
-            message
+            userMessage
         );
 
-    console.log(
-        "\nPlanner Output:"
-    );
-
-    console.log(plan);
-
-    // Step 2
-    const execution =
+    // STEP 2
+    const toolResults =
         await executionEngine(
-            plan
+            plan,
+            userMessage
         );
 
-    console.log(
-        "\nExecution Output:"
-    );
+    // STEP 3
+    let retrievedContext = "";
 
-    console.log(execution);
+    const documentSearch =
+        toolResults.find(
 
-    // Step 3
+            tool =>
+                tool.tool ===
+                "documentSearch"
+
+        );
+
+    if (documentSearch) {
+
+        retrievedContext =
+            documentSearch.result;
+
+    }
+
+    // STEP 4
     const prompt =
-        promptBuilder(
-            execution
-        );
+        buildPrompt({
 
-    console.log(
-        "\nPrompt:"
-    );
+            userMessage,
 
-    console.log(prompt);
+            retrievedContext,
 
-    console.log(
-        "\n========== AGENT END ==========\n"
-    );
+            memory: "",
 
-    return "Agent Pipeline Working 🚀";
+            toolResults:
+                JSON.stringify(toolResults)
+
+        });
+
+    // STEP 5
+    console.log("\n========== FINAL PROMPT ==========\n");
+
+console.log(prompt);
+
+console.log("\n=============================\n");
+    const response =
+        await ai.models.generateContent({
+
+            model:
+                "gemini-2.5-flash",
+
+            contents:
+                prompt
+
+        });
+
+    return response.text;
 
 }
 
-module.exports =
-    agentService;
+module.exports = {
+
+    chat
+
+};

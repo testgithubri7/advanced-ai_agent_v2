@@ -1,7 +1,10 @@
 const tools =
     require("../tools/toolRegistry");
 
-async function executionEngine(plan) {
+async function executionEngine(
+    plan,
+    userMessage
+) {
 
     const results = [];
 
@@ -25,13 +28,11 @@ async function executionEngine(plan) {
         }
 
         const result =
-            await tool();
+            await tool(userMessage);
 
         results.push({
 
-            tool:
-
-                toolName,
+            tool: toolName,
 
             result
 
