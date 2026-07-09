@@ -1,8 +1,14 @@
+const createState =
+    require("./state");
+
 const planner =
     require("./planner");
 
 const executionEngine =
     require("./executionEngine");
+
+const observe =
+    require("./observer");
 
 const buildPrompt =
     require("./promptBuilder");
@@ -20,59 +26,196 @@ const ai =
 
 async function chat(userMessage) {
 
-    // STEP 1
-    const plan =
+    // STEP 1 - Create Agent State
+    const state =
+        createState(userMessage);
+
+    // STEP 2 - Planner
+    state.plan =
         await planner(
-            userMessage
+            state.userMessage
         );
 
-    // STEP 2
-    const toolResults =
-        await executionEngine(
-            plan,
-            userMessage
+    state.goal =
+        state.plan.goal;
+
+    const MAX_ITERATIONS = 3;
+
+    while (
+
+        !state.done &&
+
+        state.iteration < MAX_ITERATIONS
+
+    ) {
+
+        state.iteration++;
+
+        console.log(
+            `\n========== ITERATION ${state.iteration} ==========\n`
         );
 
-    // STEP 3
-    let retrievedContext = "";
+        // =====================================
+        // Execute Tools
+        // =====================================
+        
+        //step 3(execution)
+        const newResults =
+            await executionEngine(
 
-    const documentSearch =
-        toolResults.find(
+                state.plan,
 
-            tool =>
-                tool.tool ===
-                "documentSearch"
+                state.userMessage
 
+            );
+
+        console.log(
+            "\n===== EXECUTION RESULTS ====="
         );
 
-    if (documentSearch) {
+        console.log(
+            newResults
+        );
 
-        retrievedContext =
-            documentSearch.result;
+        // Keep previous results also
+        state.toolResults.push(
+            ...newResults
+        );
+
+        console.log(
+            "\n===== STATE TOOL RESULTS ====="
+        );
+
+        console.log(
+            state.toolResults
+        );
+
+        // =====================================
+        // Extract Retrieved Context
+        // =====================================
+
+        const documentResults =
+            state.toolResults.filter(
+
+                tool =>
+                    tool.tool ===
+                    "documentSearch"
+
+            );
+
+        state.retrievedContext =
+            documentResults
+
+                .map(
+                    tool => tool.result
+                )
+
+                .join("\n\n");
+
+        console.log(
+            "\n===== RETRIEVED CONTEXT ====="
+        );
+
+        console.log(
+            state.retrievedContext
+        );
+
+        // =====================================
+        // Observe
+        // =====================================
+
+        //step 4 (observe)
+        state.observation =
+            await observe(state);
+
+        console.log(
+            "\n===== OBSERVER ====="
+        );
+
+        console.log(
+            state.observation
+        );
+
+        // =====================================
+        // Stop if enough information
+        // =====================================
+        if (state.observation.done) {
+
+    state.done = true;
+
+    break;
+
+}
+
+console.log(
+    "Observer requested another iteration..."
+);
+
+// Update the plan
+state.plan.tools = [
+
+    state.observation.nextAction
+
+];
+
+// Update the next query
+state.userMessage =
+    state.observation.nextQuery;
+
+console.log(
+    "\n===== UPDATED PLAN ====="
+);
+
+console.log(state.plan);
+
+console.log(
+    "\n===== NEXT QUERY ====="
+);
+
+console.log(state.userMessage);
 
     }
 
-    // STEP 4
+    // =====================================
+    // Build Final Prompt
+    // =====================================
+    //step 5:prompt building
     const prompt =
         buildPrompt({
 
-            userMessage,
+            userMessage:
+                state.userMessage,
 
-            retrievedContext,
+            retrievedContext:
+                state.retrievedContext,
 
-            memory: "",
+            memory:
+                state.memory,
 
             toolResults:
-                JSON.stringify(toolResults)
+                JSON.stringify(
+                    state.toolResults
+                )
 
         });
 
-    // STEP 5
-    console.log("\n========== FINAL PROMPT ==========\n");
+    console.log(
+        "\n========== FINAL PROMPT ==========\n"
+    );
 
-console.log(prompt);
+    console.log(
+        prompt
+    );
 
-console.log("\n=============================\n");
+    console.log(
+        "\n=============================\n"
+    );
+
+    // =====================================
+    // Final LLM Call
+    // =====================================
+
+    //step 6: final answer generation
     const response =
         await ai.models.generateContent({
 
@@ -84,7 +227,10 @@ console.log("\n=============================\n");
 
         });
 
-    return response.text;
+    state.finalAnswer =
+        response.text;
+
+    return state.finalAnswer;
 
 }
 
