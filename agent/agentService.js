@@ -31,10 +31,8 @@ async function chat(userMessage) {
         createState(userMessage);
 
     // STEP 2 - Planner
-    state.plan =
-        await planner(
-            state.userMessage
-        );
+   state.plan =
+    await planner(state);
 
     state.goal =
         state.plan.goal;
@@ -151,19 +149,29 @@ console.log(
     "Observer requested another iteration..."
 );
 
-// Update the plan
-state.plan.tools = [
+console.log(
+    "\n===== REPLANNING ====="
+);
 
-    state.observation.nextAction
-
-];
-
-// Update the next query
+// Update the query
 state.userMessage =
     state.observation.nextQuery;
 
+// Ask the planner to make a NEW plan
+state.plan =
+    await planner(
+        state
+    );
+
+state.goal =
+    state.plan.goal;
+
 console.log(
-    "\n===== UPDATED PLAN ====="
+    state.plan
+);
+
+console.log(
+    "\n===== UPDATED NEW PLAN ====="
 );
 
 console.log(state.plan);

@@ -4,10 +4,10 @@ const ai =
 const plannerPrompt =
     require("../prompts/plannerPrompt");
 
-async function planner(message) {
+async function planner(state) {
 
     const prompt =
-        plannerPrompt(message);
+        plannerPrompt(state);
 
     const response =
         await ai.models.generateContent({
@@ -20,14 +20,13 @@ async function planner(message) {
 
         });
 
-    const text =
-        response.text.trim();
+    const cleaned =
+        response.text
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
-    const cleaned = text
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-    console.log("\nPlanner Raw Response:");
+    console.log("\n===== PLANNER RESPONSE =====\n");
 
     console.log(cleaned);
 
