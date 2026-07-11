@@ -4,6 +4,9 @@ const createState =
 const planner =
     require("./planner");
 
+const retrieveMemory =
+    require("../memory/memoryService");
+
 const executionEngine =
     require("./executionEngine");
 
@@ -12,6 +15,9 @@ const observe =
 
 const buildPrompt =
     require("./promptBuilder");
+
+const saveConversation =
+    require("../memory/conversationService");
 
 const { GoogleGenAI } =
     require("@google/genai");
@@ -36,6 +42,23 @@ async function chat(userMessage) {
 
     state.goal =
         state.plan.goal;
+
+    // STEP 3 - Retrieve Memory
+
+if (state.plan.needMemory) {
+
+    console.log(
+        "\n===== RETRIEVING MEMORY =====\n"
+    );
+
+    state.memory =
+        await retrieveMemory("default-user");
+
+    console.log(
+        state.memory
+    );
+
+}
 
     const MAX_ITERATIONS = 3;
 
@@ -237,6 +260,24 @@ console.log(state.userMessage);
 
     state.finalAnswer =
         response.text;
+
+    console.log("\n===== SAVING CONVERSATION =====");
+
+console.log("Original:", state.originalUserMessage);
+
+console.log("Working:", state.userMessage);
+
+console.log("Answer:", state.finalAnswer);
+
+    await saveConversation(
+
+    "default-user",
+
+    state.originalUserMessage,
+
+    state.finalAnswer
+
+);
 
     return state.finalAnswer;
 

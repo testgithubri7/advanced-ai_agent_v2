@@ -2,6 +2,8 @@ function createState(userMessage) {
 
     return {
 
+        originalUserMessage: userMessage,
+
         userMessage,
 
         goal: "",
@@ -21,7 +23,6 @@ function createState(userMessage) {
         done: false,
 
         iteration: 0
-
 
     };
 
