@@ -12,11 +12,15 @@ function buildPrompt({
 
     return `
 
-You are an AI assistant.
+Answer using the available information below.
 
-Answer ONLY using the retrieved context.
+Use MEMORY when the answer depends on previous conversations.
 
-If the answer is not present, say you don't know.
+Use RETRIEVED CONTEXT when the answer depends on retrieved documents.
+
+If neither contains the answer, say you don't know.
+
+Do not invent information.
 
 ================================
 

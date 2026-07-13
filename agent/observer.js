@@ -17,6 +17,10 @@ ${state.goal}
 User Question:
 ${state.userMessage}
 
+Current Memory
+
+${state.memory}
+
 Current Tool Results:
 ${JSON.stringify(state.toolResults, null, 2)}
 

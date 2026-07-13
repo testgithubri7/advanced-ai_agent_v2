@@ -19,6 +19,12 @@ const buildPrompt =
 const saveConversation =
     require("../memory/conversationService");
 
+const addMemory =
+    require("../memory/addMemory");
+
+const semanticMemoryService =
+    require("../memory/semanticMemoryService");
+
 const { GoogleGenAI } =
     require("@google/genai");
 
@@ -48,15 +54,20 @@ async function chat(userMessage) {
 if (state.plan.needMemory) {
 
     console.log(
-        "\n===== RETRIEVING MEMORY =====\n"
+        "\n===== SEMANTIC MEMORY =====\n"
     );
+
+    const memories =
+        await semanticMemoryService(
+            state.userMessage
+        );
 
     state.memory =
-        await retrieveMemory("default-user");
+        memories
+            .map(memory => memory.text)
+            .join("\n\n");
 
-    console.log(
-        state.memory
-    );
+    console.log(state.memory);
 
 }
 
@@ -272,6 +283,16 @@ console.log("Answer:", state.finalAnswer);
     await saveConversation(
 
     "default-user",
+
+    state.originalUserMessage,
+
+    state.finalAnswer
+
+);
+
+await addMemory(
+
+     "default-user",
 
     state.originalUserMessage,
 
