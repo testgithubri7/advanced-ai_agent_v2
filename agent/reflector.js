@@ -4,13 +4,15 @@ const ai =
 const reflectionPrompt =
     require("../prompts/reflectionPrompt");
 
+
+
 async function reflector(
 
     question,
 
     answer,
 
-    toolResults
+   scratchpadSummary
 
 ) {
 
@@ -21,7 +23,7 @@ async function reflector(
 
             answer,
 
-            toolResults
+            scratchpadSummary
 
         );
 

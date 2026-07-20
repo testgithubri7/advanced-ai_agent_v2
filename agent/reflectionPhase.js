@@ -1,10 +1,17 @@
 const reflector =
     require("./reflector");
 
-async function reflectionPhase(
-    state,
-    MAX_ITERATIONS
-) {
+const { addScratchpadEntry } =
+    require("./scratchpad");
+
+const buildScratchpadSummary =
+    require("./scratchpadSummary");
+
+async function reflectionPhase(state) {
+
+    console.log(
+        "\n===== REFLECTION PHASE =====\n"
+    );
 
     const reflection =
         await reflector(
@@ -13,11 +20,7 @@ async function reflectionPhase(
 
             state.finalAnswer,
 
-            JSON.stringify(
-                state.toolResults,
-                null,
-                2
-            )
+            buildScratchpadSummary(state)
 
         );
 
@@ -25,36 +28,47 @@ async function reflectionPhase(
         "\n===== REFLECTION RESULT ====="
     );
 
-    console.log(
-        reflection
+    console.dir(
+        reflection,
+        { depth: null }
     );
 
-    // Save reflection into state
-    state.reflection =
-        reflection;
+    // ==========================
+    // Save Reflection
+    // ==========================
 
-    if (
+    state.reflection = reflection;
 
-        reflection.needReplan &&
+    state.reflectionGuidance =
+        reflection.nextAction || "";
 
-        state.iteration < MAX_ITERATIONS
+    // ==========================
+    // Save into Scratchpad
+    // ==========================
 
-    ) {
+    addScratchpadEntry(
 
-        console.log(
-            "\nReflection requested replanning..."
-        );
+        state,
 
-        state.done = false;
+        "reflection",
 
-        state.userMessage =
-            reflection.nextAction;
+        "Answer Evaluation",
 
-    }
+        reflection
+
+    );
+
+    console.log(
+        "\n===== SCRATCHPAD AFTER REFLECTION ====="
+    );
+
+    console.dir(
+        state.scratchpad,
+        { depth: null }
+    );
 
     return state;
 
 }
 
-module.exports =
-    reflectionPhase;
+module.exports = reflectionPhase;

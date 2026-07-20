@@ -4,6 +4,10 @@ const executionEngine =
 const observe =
     require("./observer");
 
+const {
+    addScratchpadEntry
+} = require("./scratchpad");
+
 async function executionPhase(
     state,
     MAX_ITERATIONS
@@ -53,6 +57,27 @@ async function executionPhase(
         console.log(
             state.toolResults
         );
+
+
+    // ==========================================
+// Add execution results to Scratchpad
+// ==========================================
+
+for (const result of newResults) {
+
+    addScratchpadEntry(
+
+        state,
+
+        "tool",
+
+        result.task,
+
+        result.result
+
+    );
+
+}
 
         // ==========================
         // Retrieved Context

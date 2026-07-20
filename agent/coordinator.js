@@ -14,60 +14,65 @@ async function coordinator(state) {
 
     const MAX_ITERATIONS = 3;
 
-    console.log(
-        "\n=================================="
-    );
+    const MAX_AGENT_CYCLES = 3;
 
-    console.log(
-        "STARTING AGENT WORKFLOW"
-    );
+    while (state.cycle < MAX_AGENT_CYCLES) {
 
-    console.log(
-        "==================================\n"
-    );
+        state.cycle++;
 
-    // ==========================
-    // Planning
-    // ==========================
+        console.log(
+            `\n========== AGENT CYCLE ${state.cycle} ==========\n`
+        );
 
-    await planningPhase(
-        state
-    );
+        // Reset per-cycle state
+        state.done = false;
 
-    // ==========================
-    // Execution
-    // ==========================
+        state.iteration = 0;
 
-    await executionPhase(
+        state.observation = null;
 
-        state,
+        state.plan = null;
 
-        MAX_ITERATIONS
+        state.goal = "";
 
-    );
+        state.toolResults = [];
 
-    // ==========================
-    // Final Answer
-    // ==========================
+        state.retrievedContext = "";
 
-    await answerPhase(
-        state
-    );
+        state.memory = "";
 
-    // ==========================
-    // Reflection
-    // ==========================
+        // Planning
+        await planningPhase(state);
 
-    await reflectionPhase(
+        // Execution
+        await executionPhase(
+            state,
+            MAX_ITERATIONS
+        );
 
-        state,
+        // Answer
+        await answerPhase(state);
 
-        MAX_ITERATIONS
+        // Reflection
+        await reflectionPhase(state, MAX_ITERATIONS);
 
-    );
+        // Success
+        if (state.reflection.satisfied) {
+
+            console.log(
+                "\nReflection approved the answer."
+            );
+
+            break;
+        }
+
+        console.log(
+            "\nReflection requested replanning..."
+        );
+
+    }
 
     return state;
-
 }
 
 module.exports =

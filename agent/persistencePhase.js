@@ -4,6 +4,8 @@ const saveConversation =
 const addMemory =
     require("../memory/addMemory");
 
+
+
 async function persistencePhase(state) {
 
     console.log(

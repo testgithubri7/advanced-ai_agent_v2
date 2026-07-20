@@ -1,3 +1,6 @@
+const buildScratchpadSummary =
+    require("../agent/scratchpadSummary");
+
 function plannerPrompt(state) {
 
 return `
@@ -16,6 +19,10 @@ ${state.originalUserMessage}
 
 ==================================
 
+REFLECTION GUIDANCE
+
+${state.reflectionGuidance || "None"}
+
 CURRENT WORKING QUERY
 
 ${state.userMessage}
@@ -25,6 +32,12 @@ ${state.userMessage}
 CURRENT GOAL
 
 ${state.goal || "Not decided yet"}
+
+==================================
+
+CURRENT AGENT CYCLE
+
+${state.cycle}
 
 ==================================
 
@@ -52,6 +65,32 @@ ${state.memory || "No memory"}
 
 ==================================
 
+SCRATCHPAD
+
+${buildScratchpadSummary(state)}
+
+==================================
+
+PREVIOUS REFLECTION
+
+${JSON.stringify(state.reflection, null, 2)}
+
+==================================
+
+IMPORTANT CONTEXT
+
+The scratchpad contains work that has already been completed.
+
+Before creating a new plan:
+
+- Check what has already been completed.
+- Reuse previous results whenever possible.
+- Do NOT repeat completed work unless Reflection explicitly requests it.
+- If Reflection asks for additional information, plan ONLY the missing work.
+- Continue building on previous progress instead of restarting.
+
+==================================
+
 AVAILABLE TOOLS
 
 weather
@@ -61,10 +100,19 @@ calculator
 → Mathematical calculations only.
 
 documentSearch
-→ Company documents only.
+→ Retrieve information from company documents only.
 
 llm
-→ Use when reasoning, summarizing, comparing, or generating a final answer without calling an external tool.
+→ Use for reasoning over information that has already been retrieved.
+
+Examples:
+- Compare retrieved documents
+- Summarize retrieved information
+- Explain results
+- Generate conclusions
+- Answer using scratchpad information
+
+Never use llm to retrieve company information.
 
 ==================================
 
@@ -99,14 +147,22 @@ Examples:
 - Benefits
 - Notice period
 - HR policy
-- Internal documentation
 - Company handbook
+- Internal documentation
 
 Otherwise false.
 
 ==================================
 
-3. Break the user's goal into executable steps.
+3. Create an execution plan.
+
+Before creating the steps:
+
+- Examine the scratchpad.
+- Identify completed tasks.
+- Reuse completed work whenever possible.
+- Create new steps ONLY for work that is still missing.
+- Avoid repeating successful tool calls.
 
 Each step should solve ONE sub-problem.
 
@@ -116,11 +172,59 @@ Each step must contain:
 - tool
 - query
 
-If reasoning is required without an external tool, use
+If reasoning is required without calling an external tool, use
 
 tool = "llm"
 
-The steps must be returned in execution order.
+Return the steps in execution order.
+
+==================================
+
+REPLANNING EXAMPLE
+
+Original Question
+
+Compare leave policy and insurance policy.
+
+Scratchpad
+
+✓ Retrieved leave policy
+
+✓ Retrieved insurance policy
+
+✓ Compared policies
+
+Reflection
+
+Missing employee eligibility.
+
+GOOD PLAN
+
+[
+    {
+        "task":"Explain employee eligibility",
+        "tool":"llm",
+        "query":"Using the previously retrieved information, explain the employee eligibility differences."
+    }
+]
+
+BAD PLAN
+
+Retrieve leave policy again.
+
+Retrieve insurance policy again.
+
+==================================
+
+PLANNING PRIORITY
+
+Always follow this order:
+
+1. Reuse scratchpad results.
+2. Use memory if required.
+3. Retrieve only missing information.
+4. Use llm to reason over retrieved information.
+5. Minimize unnecessary tool calls.
 
 ==================================
 
@@ -129,24 +233,24 @@ Return ONLY valid JSON.
 Schema
 
 {
-    "goal": "string",
+    "goal":"string",
 
-    "needRetrieval": true,
+    "needRetrieval":true,
 
-    "needMemory": false,
+    "needMemory":false,
 
-    "tools": [],
+    "tools":[
+        "documentSearch"
+    ],
 
-    "steps": [
-
+    "steps":[
         {
-            "task": "string",
+            "task":"string",
 
-            "tool": "weather | calculator | documentSearch | llm",
+            "tool":"weather | calculator | documentSearch | llm",
 
-            "query": "string"
+            "query":"string"
         }
-
     ]
 }
 
@@ -154,23 +258,23 @@ Schema
 
 Rules for "tools"
 
-Keep the "tools" array for backward compatibility.
+The "tools" array exists only for backward compatibility.
 
 Include every external tool used in the steps.
 
 Do NOT include "llm" inside the tools array.
 
-Example:
+Example
 
-If steps use:
+Steps
 
 documentSearch
 documentSearch
 llm
 
-then
+Then
 
-"tools": [
+"tools":[
     "documentSearch"
 ]
 

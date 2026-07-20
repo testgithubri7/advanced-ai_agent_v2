@@ -4,6 +4,8 @@ const planner =
 const semanticMemoryService =
     require("../memory/semanticMemoryService");
 
+const { addScratchpadEntry } = require("./scratchpad");
+
 async function planningPhase(state) {
 
     console.log(
@@ -19,6 +21,30 @@ async function planningPhase(state) {
 
     state.goal =
         state.plan.goal;
+
+    addScratchpadEntry(
+
+    state,
+
+    "plan",
+
+    "Planning",
+
+    {
+
+        goal: state.plan.goal,
+
+        steps: state.plan.steps
+
+    }
+
+);
+
+    console.log("\n===== SCRATCHPAD AFTER PLANNING =====");
+
+console.dir(state.scratchpad, {
+    depth: null
+});
 
     // ===========================
     // Semantic Memory
