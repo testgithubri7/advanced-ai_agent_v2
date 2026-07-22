@@ -4,145 +4,66 @@ const tools =
 const llmExecutor =
     require("./llmExecutor");
 
+const executeStep =
+    require("./executeStep");
+
 async function executionEngine(
-    plan,
-    userMessage
+    steps,
+    previousResults
 ) {
 
-    const results = [];
+    const settledResults =
+        await Promise.allSettled(
 
-    // ===========================
-    // Backward Compatibility
-    // ===========================
+            steps.map(step =>
 
-    if (!plan.steps || plan.steps.length === 0) {
-
-        for (const toolName of plan.tools) {
-
-            console.log(
-                `Executing Tool: ${toolName}`
-            );
-
-            const tool =
-                tools[toolName];
-
-            if (!tool) {
-
-                console.log(
-                    `Tool ${toolName} not found.`
-                );
-
-                continue;
-
-            }
-
-            const result =
-                await tool(userMessage);
-
-            results.push({
-
-                tool: toolName,
-
-                result
-
-            });
-
-        }
-
-        return results;
-
-    }
-
-    // ===========================
-    // Step Executor
-    // ===========================
-
-    for (const step of plan.steps) {
-
-        console.log(
-            "\n=============================="
-        );
-
-        console.log(
-            "EXECUTING STEP"
-        );
-
-        console.log(
-            "=============================="
-        );
-
-        console.log(step);
-
-        // ===========================
-        // LLM Step
-        // ===========================
-
-        if (step.tool === "llm") {
-
-            const result =
-                await llmExecutor(
+                executeStep(
 
                     step,
 
-                    results
+                    previousResults
 
-                );
+                )
+
+            )
+
+        );
+
+    const results = [];
+
+    for (const result of settledResults) {
+
+        if (result.status === "fulfilled") {
 
             results.push({
 
-                task:
-                    step.task,
+                success: true,
 
-                tool:
-                    "llm",
-
-                query:
-                    step.query,
-
-                result
+                ...result.value
 
             });
 
-            continue;
-
         }
 
-        // ===========================
-        // Tool Step
-        // ===========================
+        else {
 
-        const tool =
-            tools[step.tool];
-
-        if (!tool) {
-
-            console.log(
-                `Tool ${step.tool} not found.`
+            console.error(
+                "Step Failed:",
+                result.reason
             );
 
-            continue;
+            results.push({
+
+                success: false,
+
+                error:
+                    result.reason.message ||
+
+                    "Unknown Error"
+
+            });
 
         }
-
-        const result =
-            await tool(
-                step.query
-            );
-
-        results.push({
-
-            task:
-                step.task,
-
-            tool:
-                step.tool,
-
-            query:
-                step.query,
-
-            result
-
-        });
 
     }
 

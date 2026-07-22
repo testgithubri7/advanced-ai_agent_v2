@@ -1,6 +1,9 @@
 const executionEngine =
     require("./executionEngine");
 
+const executionScheduler =
+    require("./executionScheduler");
+
 const observe =
     require("./observer");
 
@@ -27,28 +30,79 @@ async function executionPhase(
             `\n========== ITERATION ${state.iteration} ==========\n`
         );
 
-        // ==========================
-        // Execute Plan
-        // ==========================
+        // ==========================================
+        // Build Execution Rounds
+        // ==========================================
 
-        const newResults =
-            await executionEngine(
-
-                state.plan,
-
-                state.userMessage
-
+        const rounds =
+            executionScheduler(
+                state.plan.steps
             );
 
         console.log(
-            "\n===== EXECUTION RESULTS ====="
+            "\n===== EXECUTION ROUNDS ====="
         );
 
-        console.log(newResults);
+        console.log(rounds);
 
-        state.toolResults.push(
-            ...newResults
-        );
+        // ==========================================
+        // Execute Each Round
+        // ==========================================
+
+        for (const round of rounds) {
+
+            console.log(
+                "\n===== EXECUTING ROUND ====="
+            );
+
+            console.log(round);
+
+            const roundResults =
+                await executionEngine(
+
+                    round,
+
+                    state.toolResults
+
+                );
+
+            console.log(
+                "\n===== ROUND RESULTS ====="
+            );
+
+            console.log(
+                roundResults
+            );
+
+            // ==========================
+            // Store Results
+            // ==========================
+
+            state.toolResults.push(
+                ...roundResults
+            );
+
+            // ==========================
+            // Scratchpad
+            // ==========================
+
+            for (const result of roundResults) {
+
+                addScratchpadEntry(
+
+                    state,
+
+                    "tool",
+
+                    result.task,
+
+                    result.result
+
+                );
+
+            }
+
+        }
 
         console.log(
             "\n===== STATE TOOL RESULTS ====="
@@ -57,27 +111,6 @@ async function executionPhase(
         console.log(
             state.toolResults
         );
-
-
-    // ==========================================
-// Add execution results to Scratchpad
-// ==========================================
-
-for (const result of newResults) {
-
-    addScratchpadEntry(
-
-        state,
-
-        "tool",
-
-        result.task,
-
-        result.result
-
-    );
-
-}
 
         // ==========================
         // Retrieved Context

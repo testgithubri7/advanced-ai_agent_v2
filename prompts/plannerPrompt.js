@@ -168,15 +168,70 @@ Each step should solve ONE sub-problem.
 
 Each step must contain:
 
+- id
 - task
 - tool
 - query
+- dependsOn
+
+Task Dependencies
+
+Every step must include a "dependsOn" field.
+
+The field contains the IDs of tasks that must finish before the current task can begin.
+
+Examples
+
+Independent task
+
+{
+    "id":1,
+    "task":"Retrieve Leave Policy",
+    "tool":"documentSearch",
+    "query":"Leave Policy",
+    "dependsOn":[]
+}
+
+Another independent task
+
+{
+    "id":2,
+    "task":"Retrieve Insurance Policy",
+    "tool":"documentSearch",
+    "query":"Insurance Policy",
+    "dependsOn":[]
+}
+
+Dependent task
+
+{
+    "id":3,
+    "task":"Compare Policies",
+    "tool":"llm",
+    "query":"Compare the retrieved policies.",
+    "dependsOn":[1,2]
+}
+
+Rules
+
+- Independent tasks must have an empty dependsOn array.
+- A task can only depend on previous task IDs.
+- Never create circular dependencies.
+- Use dependencies whenever one task requires the output of another.
 
 If reasoning is required without calling an external tool, use
 
 tool = "llm"
 
 Return the steps in execution order.
+
+When multiple steps are completely independent of each other, assign them different IDs and keep dependsOn empty.
+
+When a step requires the output of another step, reference that step's ID in dependsOn.
+
+Always create the smallest valid dependency graph.
+
+Independent work should remain independent.
 
 ==================================
 
@@ -244,14 +299,18 @@ Schema
     ],
 
     "steps":[
-        {
-            "task":"string",
+    {
+        "id":1,
 
-            "tool":"weather | calculator | documentSearch | llm",
+        "task":"string",
 
-            "query":"string"
-        }
-    ]
+        "tool":"weather | calculator | documentSearch | llm",
+
+        "query":"string",
+
+        "dependsOn":[]
+    }
+]
 }
 
 ==================================
