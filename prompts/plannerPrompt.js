@@ -116,13 +116,6 @@ Never use llm to retrieve company information.
 
 ==================================
 
-ROUTER RECOMMENDATION
-
-${state.router
-    ? JSON.stringify(state.router, null, 2)
-    : "No router recommendation available."}
-
-==================================
 PLANNING RULES
 
 1. Decide whether memory is required.
@@ -142,14 +135,6 @@ Examples:
 Otherwise false.
 
 ==================================
-Before selecting tools:
-
-- Review the Router Recommendation.
-- Prefer using the tools recommended by the router.
-- Only use another available tool if it is clearly required to complete the user's request.
-- If you use a tool that was not recommended, ensure there is a valid planning reason.
-
-
 
 2. Decide whether document retrieval is required.
 
