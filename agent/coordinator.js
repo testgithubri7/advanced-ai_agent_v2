@@ -1,3 +1,5 @@
+const toolRouter = require("./toolRouter");
+
 const planningPhase =
     require("./planningPhase");
 
@@ -40,6 +42,9 @@ async function coordinator(state) {
         state.retrievedContext = "";
 
         state.memory = "";
+
+        // Tool Routing
+        await toolRouter(state);
 
         // Planning
         await planningPhase(state);
