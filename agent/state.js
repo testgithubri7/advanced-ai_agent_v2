@@ -6,9 +6,11 @@ function createState(userMessage) {
         // User
         // ==========================
 
-        originalUserMessage: userMessage,
+        originalUserMessage:
+            userMessage,
 
         userMessage,
+
 
         // ==========================
         // Planning
@@ -18,11 +20,51 @@ function createState(userMessage) {
 
         plan: null,
 
+
+        // ==========================
+        // Agent Routing
+        // ==========================
+
+        // Output from Agent Router
+        // Example:
+        // {
+        //   agents:[
+        //      "research",
+        //      "reasoning",
+        //      "answer"
+        //   ]
+        // }
+
+        agentPlan: null,
+
+
+        // ==========================
+        // Agent Execution
+        // ==========================
+
+        // Track which agents ran
+
+        agentResults: [],
+
+
+        // Research Agent output
+
+        researchResult: null,
+
+
+        // Reasoning Agent output
+
+        reasoningResult: null,
+
+
+
         // ==========================
         // Memory
         // ==========================
 
         memory: "",
+
+
 
         // ==========================
         // Retrieval
@@ -30,20 +72,33 @@ function createState(userMessage) {
 
         retrievedContext: "",
 
+
+
         // ==========================
-        // Agent Scratchpad
-        // (We'll build this next)
+        // Tool Execution
         // ==========================
 
         toolResults: [],
 
+        workspace: {},
+
+
+
+        // ==========================
+        // Agent Scratchpad
+        // ==========================
+
         scratchpad: [],
+
+
 
         // ==========================
         // Observer
         // ==========================
 
         observation: null,
+
+
 
         // ==========================
         // Reflection
@@ -53,11 +108,15 @@ function createState(userMessage) {
 
         reflectionGuidance: "",
 
+
+
         // ==========================
         // Final Output
         // ==========================
 
         finalAnswer: "",
+
+
 
         // ==========================
         // Loop Control
@@ -73,4 +132,6 @@ function createState(userMessage) {
 
 }
 
-module.exports = createState;
+
+module.exports =
+    createState;
