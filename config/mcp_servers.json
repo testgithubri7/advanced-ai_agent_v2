@@ -1,0 +1,22 @@
+[
+    {
+        "name":"math",
+
+        "command":"node",
+
+        "args":[
+            "../../../math-mcp-server/server.js"
+        ]
+    },
+
+
+    {
+        "name":"github",
+
+        "command":"node",
+
+        "args":[
+            "../../../github-mcp-server/server.js"
+        ]
+    }
+]

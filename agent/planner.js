@@ -7,7 +7,7 @@ const plannerPrompt =
 async function planner(state) {
 
     const prompt =
-        plannerPrompt(state);
+        await plannerPrompt(state);
 
     const response =
         await ai.models.generateContent({

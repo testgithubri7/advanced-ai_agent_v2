@@ -12,6 +12,19 @@ const connectDB =
 const agentRoutes =
     require("./routes/agentRoutes");
 
+const {
+connectMCP,
+getGeminiTools
+}
+=
+require("./services/mcpClient");
+
+const {
+setTools
+}
+=
+require("./services/mcpRegistry");
+
 const path = require("path");
 
 
@@ -38,6 +51,22 @@ async function startServer() {
 
         // 1. Connect to MongoDB first
         await connectDB();
+
+        // 2. Connect to MCP server
+        await connectMCP();
+
+        const tools =
+await getGeminiTools();
+
+        // 3. Set the tools in the registry
+        setTools(tools);
+
+
+console.log(
+"MCP Tools:",
+tools
+);
+
 
         // 2. Start Express server only after DB connection
         app.listen(PORT, () => {

@@ -1,7 +1,37 @@
 const buildScratchpadSummary =
     require("../agent/scratchpadSummary");
 
-function plannerPrompt(state) {
+
+const {
+    getTools
+}
+=
+require("../services/mcpRegistry");
+
+
+
+async function plannerPrompt(state) {
+
+
+const mcpTools =
+    getTools();
+
+
+
+const dynamicTools =
+    mcpTools
+    .map(tool => `
+
+${tool.name}
+→ ${tool.description}
+
+Input Schema:
+${JSON.stringify(tool.parameters,null,2)}
+
+`)
+.join("\n");
+
+
 
 return `
 
@@ -22,6 +52,8 @@ ${state.originalUserMessage}
 REFLECTION GUIDANCE
 
 ${state.reflectionGuidance || "None"}
+
+==================================
 
 CURRENT WORKING QUERY
 
@@ -77,6 +109,7 @@ ${JSON.stringify(state.reflection, null, 2)}
 
 ==================================
 
+
 IMPORTANT CONTEXT
 
 The scratchpad contains work that has already been completed.
@@ -89,34 +122,46 @@ Before creating a new plan:
 - If Reflection asks for additional information, plan ONLY the missing work.
 - Continue building on previous progress instead of restarting.
 
+
 ==================================
 
-AVAILABLE TOOLS
+AVAILABLE MCP TOOLS
 
-weather
-→ Weather questions only.
+The following tools are discovered dynamically from connected MCP servers.
 
-calculator
-→ Mathematical calculations only.
+${dynamicTools}
+
+
+==================================
+
+LOCAL AGENT TOOLS
+
 
 documentSearch
+
 → Retrieve information from company documents only.
 
+
 llm
+
 → Use for reasoning over information that has already been retrieved.
 
 Examples:
+
 - Compare retrieved documents
 - Summarize retrieved information
 - Explain results
 - Generate conclusions
 - Answer using scratchpad information
 
-Never use llm to retrieve company information.
+
+Never use llm to retrieve information.
+
 
 ==================================
 
 PLANNING RULES
+
 
 1. Decide whether memory is required.
 
@@ -132,9 +177,12 @@ Examples:
 - What is my name?
 - Recall our earlier conversation.
 
+
 Otherwise false.
 
+
 ==================================
+
 
 2. Decide whether document retrieval is required.
 
@@ -150,130 +198,209 @@ Examples:
 - Company handbook
 - Internal documentation
 
+
 Otherwise false.
+
 
 ==================================
 
+
 3. Create an execution plan.
+
 
 Before creating the steps:
 
 - Examine the scratchpad.
 - Identify completed tasks.
 - Reuse completed work whenever possible.
-- Create new steps ONLY for work that is still missing.
+- Create new steps ONLY for missing work.
 - Avoid repeating successful tool calls.
+
 
 Each step should solve ONE sub-problem.
 
+==================================
+
+MCP TOOL ARGUMENT RULES
+
+
+MCP tools use the "arguments" field to pass parameters.
+
+
+For tools that require inputs:
+
+Use:
+
+{
+    "id":1,
+
+    "task":"string",
+
+    "tool":"tool_name",
+
+    "arguments":{
+
+        "parameter":"value"
+
+    },
+
+    "query":"",
+
+    "dependsOn":[]
+}
+
+
+Examples:
+
+
+github_search:
+
+{
+    "tool":"github_search",
+
+    "arguments":{
+
+        "query":"transformer models"
+
+    }
+}
+
+
+github_create_repo:
+
+{
+    "tool":"github_create_repo",
+
+    "arguments":{
+
+        "name":"AI-Agent-Test",
+
+        "description":"Created by AI agent"
+
+    }
+}
+
+
+github_list_repos:
+
+{
+    "tool":"github_list_repos",
+
+    "arguments":{}
+}
+
+
+Never put MCP tool parameters inside query.
+
+
+Wrong:
+
+{
+    "tool":"github_create_repo",
+
+    "query":"AI-Agent-Test"
+}
+
+
+Correct:
+
+{
+    "tool":"github_create_repo",
+
+    "arguments":{
+
+        "name":"AI-Agent-Test"
+
+    }
+}
+
+==================================
+
+
 Each step must contain:
+
 
 - id
 - task
 - tool
 - query
+- arguments
 - dependsOn
 
-Task Dependencies
+
+==================================
+
+TASK DEPENDENCIES
+
 
 Every step must include a "dependsOn" field.
 
+
 The field contains the IDs of tasks that must finish before the current task can begin.
 
-Examples
 
-Independent task
+Independent task example:
+
 
 {
     "id":1,
+
     "task":"Retrieve Leave Policy",
+
     "tool":"documentSearch",
+
     "query":"Leave Policy",
+
+    "arguments":{},
+
     "dependsOn":[]
 }
 
-Another independent task
 
-{
-    "id":2,
-    "task":"Retrieve Insurance Policy",
-    "tool":"documentSearch",
-    "query":"Insurance Policy",
-    "dependsOn":[]
-}
+Dependent task example:
 
-Dependent task
 
 {
     "id":3,
+
     "task":"Compare Policies",
+
     "tool":"llm",
+
     "query":"Compare the retrieved policies.",
+
+    "arguments":{},
+
     "dependsOn":[1,2]
 }
 
-Rules
+
+Rules:
 
 - Independent tasks must have an empty dependsOn array.
 - A task can only depend on previous task IDs.
 - Never create circular dependencies.
-- Use dependencies whenever one task requires the output of another.
+- Use dependencies whenever one task requires another task's output.
 
-If reasoning is required without calling an external tool, use
+
+==================================
+
+
+If reasoning is required without calling an external tool, use:
 
 tool = "llm"
 
-Return the steps in execution order.
 
-When multiple steps are completely independent of each other, assign them different IDs and keep dependsOn empty.
+Return steps in execution order.
 
-When a step requires the output of another step, reference that step's ID in dependsOn.
-
-Always create the smallest valid dependency graph.
-
-Independent work should remain independent.
 
 ==================================
 
-REPLANNING EXAMPLE
 
-Original Question
+REPLANNING RULES
 
-Compare leave policy and insurance policy.
 
-Scratchpad
-
-✓ Retrieved leave policy
-
-✓ Retrieved insurance policy
-
-✓ Compared policies
-
-Reflection
-
-Missing employee eligibility.
-
-GOOD PLAN
-
-[
-    {
-        "task":"Explain employee eligibility",
-        "tool":"llm",
-        "query":"Using the previously retrieved information, explain the employee eligibility differences."
-    }
-]
-
-BAD PLAN
-
-Retrieve leave policy again.
-
-Retrieve insurance policy again.
-
-==================================
-
-PLANNING PRIORITY
-
-Always follow this order:
+Always follow:
 
 1. Reuse scratchpad results.
 2. Use memory if required.
@@ -281,11 +408,15 @@ Always follow this order:
 4. Use llm to reason over retrieved information.
 5. Minimize unnecessary tool calls.
 
+
 ==================================
+
 
 Return ONLY valid JSON.
 
-Schema
+
+Schema:
+
 
 {
     "goal":"string",
@@ -295,54 +426,81 @@ Schema
     "needMemory":false,
 
     "tools":[
-        "documentSearch"
+        "external tools used in steps"
     ],
 
     "steps":[
-    {
-        "id":1,
+        {
 
-        "task":"string",
+            "id":1,
 
-        "tool":"weather | calculator | documentSearch | llm",
+            "task":"string",
 
-        "query":"string",
+            "tool":"tool name from available tools",
 
-        "dependsOn":[]
-    }
-]
+            "query":"string",
+
+            "dependsOn":[]
+
+        }
+    ]
 }
 
+
 ==================================
+
 
 Rules for "tools"
 
+
 The "tools" array exists only for backward compatibility.
+
 
 Include every external tool used in the steps.
 
+
+External tools may come from:
+
+- MCP servers
+- Local agent tools
+
+
 Do NOT include "llm" inside the tools array.
 
-Example
 
-Steps
+Example:
+
+
+Steps:
+
+calculator
 
 documentSearch
-documentSearch
+
 llm
 
-Then
+
+Then:
+
 
 "tools":[
+
+    "calculator",
+
     "documentSearch"
+
 ]
+
 
 ==================================
 
+
 Return ONLY valid JSON.
+
 
 `;
 
 }
+
 
 module.exports = plannerPrompt;
