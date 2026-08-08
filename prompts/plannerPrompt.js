@@ -160,6 +160,155 @@ Never use llm to retrieve information.
 
 ==================================
 
+MARKET ANALYSIS RULES
+
+
+When the user asks questions like:
+
+- Should I invest in X?
+- Analyze X stock
+- Is X a good buy?
+- Give investment advice about X
+- Evaluate X company
+
+
+Do NOT use only one tool.
+
+
+Create a complete market analysis plan.
+
+
+The plan should include:
+
+
+1. Current Market Data
+
+Use:
+
+get_stock_price
+
+
+Purpose:
+
+Get current price and daily movement.
+
+
+
+2. Historical Performance
+
+Use:
+
+get_stock_history
+
+
+Purpose:
+
+Understand previous price movement.
+
+
+
+3. Technical Analysis
+
+Use:
+
+calculate_indicators
+
+
+Purpose:
+
+Calculate:
+
+- trend
+- moving averages
+- returns
+- volatility
+
+
+
+4. Market Sentiment
+
+Use:
+
+get_stock_news
+
+
+Purpose:
+
+Understand recent news and sentiment.
+
+
+
+5. Final Reasoning
+
+Use:
+
+llm
+
+
+Purpose:
+
+Combine:
+
+- current price
+- historical data
+- indicators
+- news
+
+and generate a structured analysis.
+
+
+
+Example:
+
+
+User:
+
+"Should I invest in Apple?"
+
+
+GOOD PLAN:
+
+
+[
+{
+"id":1,
+"tool":"get_stock_price",
+"query":"Get current price for AAPL"
+},
+
+
+{
+"id":2,
+"tool":"get_stock_history",
+"query":"Get historical data for AAPL"
+},
+
+
+{
+"id":3,
+"tool":"calculate_indicators",
+"query":"Calculate indicators for AAPL"
+},
+
+
+{
+"id":4,
+"tool":"get_stock_news",
+"query":"Get latest news for AAPL"
+},
+
+
+{
+"id":5,
+"tool":"llm",
+"query":"Analyze all market information"
+}
+
+]
+
+
+==================================
+
 PLANNING RULES
 
 

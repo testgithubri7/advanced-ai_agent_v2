@@ -18,5 +18,15 @@
         "args":[
             "../../../github-mcp-server/server.js"
         ]
-    }
+    },
+
+    {
+    "name":"market",
+
+    "command":"node",
+
+    "args":[
+        "../../../Desktop/market-mcp-server/server.js"
+    ]
+}
 ]
